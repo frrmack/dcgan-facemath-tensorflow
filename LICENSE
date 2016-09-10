@@ -1,11 +1,14 @@
 Most of the code in this repository was written by modifying a duplicate of
 Taehoon Kim's DCGAN-tensorflow project:
 https://github.com/carpedm20/DCGAN-tensorflow
+and additions by Brandon Amos in the dcgan-completion.tensorflow project:
+https://github.com/bamos/dcgan-completion.tensorflow)
 
-The modifications are Copyright (c) 2016 Brandon Amos
+The modifications on top of that are Copyright (c) 2016 Irmak Sirer
 
-In compliance with the license for DCGAN-tensorflow, we reproduce the license
-statement below, and release the code in this directory under the same license.
+In compliance with the licenses for DCGAN-tensorflow and
+dcgan-completion.tensorflow, we reproduce the license statement below,
+and release the code in this directory under the same license.
 
 
 The MIT License (MIT)

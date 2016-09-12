@@ -23,7 +23,7 @@
 
 + My extensions here are involve projecting face images onto the
   uniform z-space of the generator in a DCGAN trained on faces. To get
-  realistic looking faces. I use the loss functions defined by Raymond
+  realistic looking projections, I use the loss functions defined by Raymond
   Yeh et al. in their paper; without a mask, of course, since we are
   not completing images with missing pieces -- we have a fully complete real image, we are simply trying to find
   the best counterpart that the generator can generate. By using a

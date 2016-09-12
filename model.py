@@ -109,13 +109,19 @@ class DCGAN(object):
 
         self.saver = tf.train.Saver(max_to_keep=1)
 
-        # Completion.
+        # Projection
+        self.full_contextual_loss = tf.reduce_sum(
+            tf.contrib.layers.flatten(tf.abs(self.G - self.images)), 1)
+        self.perceptual_loss = self.g_loss
+        self.project_loss = self.full_contextual_loss + self.lam*self.perceptual_loss
+        self.grad_project_loss = tf.gradients(self.project_loss, self.z)
+        
+        # Completion 
         self.mask = tf.placeholder(tf.float32, [None] + self.image_shape, name='mask')
-        self.contextual_loss = tf.reduce_sum(
+        self.masked_contextual_loss = tf.reduce_sum(
             tf.contrib.layers.flatten(
                 tf.abs(tf.mul(self.mask, self.G) - tf.mul(self.mask, self.images))), 1)
-        self.perceptual_loss = self.g_loss
-        self.complete_loss = self.contextual_loss + self.lam*self.perceptual_loss
+        self.complete_loss = self.masked_contextual_loss + self.lam*self.perceptual_loss
         self.grad_complete_loss = tf.gradients(self.complete_loss, self.z)
 
     def train(self, config):
@@ -197,6 +203,16 @@ class DCGAN(object):
                 if np.mod(counter, 500) == 2:
                     self.save(config.checkpoint_dir, counter)
 
+    def project(self, config):
+        os.makedirs(os.path.join(config.outDir, 'hats_imgs'), exist_ok=True)
+        os.makedirs(os.path.join(config.outDir, 'projected'), exist_ok=True)
+
+        tf.initialize_all_variables().run()
+
+        isLoaded = self.load(self.checkpoint_dir)
+        assert(isLoaded)
+        
+                    
 
     def complete(self, config):
         os.makedirs(os.path.join(config.outDir, 'hats_imgs'), exist_ok=True)

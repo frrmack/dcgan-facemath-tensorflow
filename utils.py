@@ -1,6 +1,8 @@
 # Original Version: Taehoon Kim (http://carpedm20.github.io)
 #   + Source: https://github.com/carpedm20/DCGAN-tensorflow/blob/e30539fb5e20d5a0fed40935853da97e9e55eee8/utils.py
 #   + License: MIT
+# Modifications: Irmak Sirer
+#   + License: MIT
 
 """
 Some codes from https://github.com/Newmu/dcgan_code
@@ -10,6 +12,7 @@ import math
 import json
 import random
 import pprint
+import pickle
 import scipy.misc
 import numpy as np
 from time import gmtime, strftime
@@ -24,6 +27,23 @@ def get_image(image_path, image_size, is_crop=True):
 def save_images(images, size, image_path):
     return imsave(inverse_transform(images), size, image_path)
 
+def save_single_image(image, image_path):
+    return save_images([image], (1,1), image_path)
+
+def save_image_batch(batch, batch_size, image_path, num_cols=8):
+    num_rows = np.ceil(batch_size/num_cols)
+    return save_images(batch[:batch_size,:,:,:],
+                       [num_rows,num_cols],
+                       image_path)
+
+def save_z_vector_batch(batch, batch_size, file_path):
+    num_rows = np.ceil(batch_size/num_cols)
+    for i in xrange(batch_size):
+        z = batch[i, :]
+        file_path = "{}-z_{:05d}.pkl".format(file_path, i)
+        with open(file_path, 'w') as output:
+            pickle.dump(z, file_path)
+    
 def imread(path):
     return scipy.misc.imread(path, mode='RGB').astype(np.float)
 

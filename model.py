@@ -10,6 +10,7 @@
 from __future__ import division
 import os
 import time
+import errno
 from glob import glob
 import tensorflow as tf
 from six.moves import xrange
@@ -218,7 +219,7 @@ class DCGAN(object):
                        momentum=0.9,
                        output_every_nth_step=50,
                        projected_img_output_dir=None,
-                       z_vector_output_dir=None):
+                       z_vectors_output_dir=None):
         # initialize (starting vectors and starting velocity)
         batch_size = len(images)
         if init_z_hats is None:
@@ -228,7 +229,7 @@ class DCGAN(object):
         v = 0
 
         # steps of gradient descent with momentum
-        for i in xrange(n_iterations):
+        for step in xrange(n_iterations):
 
             feed_dict = {
                 self.z: z_hats,
@@ -255,9 +256,9 @@ class DCGAN(object):
 
             # log the progress and save the intermediary z_hats and generated images
             # we get along the way during optimization
-            if i % output_every_step == 0 or i == (n_iterations-1):
+            if step % output_every_nth_step == 0 or step == (n_iterations-1):
                 loss_value = np.mean(loss[0:batch_size])
-                msg = "Searching z, step {}. Loss = {}".format(i, loss_value)
+                msg = "Searching z, step {}. Loss = {}".format(step, loss_value)
                 print(msg)
 
                 if projected_img_output_dir:
@@ -282,14 +283,14 @@ class DCGAN(object):
 
         # create the output directories
         output_dir = config.outDir
-        projected_output_dir = os.path.join(output_dir, 'projected'))
-        z_vectors_output_dir = os.path.join(output_dir, 'z_vectors'))
-        for directory in (projected_output_dir, z_vectors_output_dir):
-        try:
-            os.makedirs(directory)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        projected_img_output_dir = os.path.join(output_dir, 'projected')
+        z_vectors_output_dir = os.path.join(output_dir, 'z_vectors')
+        for directory in (projected_img_output_dir, z_vectors_output_dir):
+            try:
+                os.makedirs(directory)
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise
 
         # initialize tensorflow variables
         tf.initialize_all_variables().run()
@@ -330,20 +331,25 @@ class DCGAN(object):
              generated_images) = self.find_optimal_z(loss_function = self.project_loss,
                                                      loss_gradient = self.grad_project_loss,
                                                      images = batch_images,
-                                                     n_iterations=50,
+                                                     n_iterations=10,
                                                      output_every_nth_step=5,
-                                                     projected_img_output_dir = projected_output_dir,
-                                                     z_vector_output_dir = z_vector_output_dir)
+                                                     projected_img_output_dir = projected_img_output_dir,
+                                                     z_vectors_output_dir = z_vectors_output_dir)
 
 
             # take the average of all returned z_hats and save the corresponding image
             # it is the "average" of all images in this batch (but averaged in z-space,
             # not pixel-space, of course)
+            # (since we are working with batches, this will be a single image in a whole
+            # batch, the rest is zero padding)
             nonzero_z_hats = z_hats[:current_batch_size, :]
             average_z = nonzero_z_hats.mean(axis=0)
-            average_image = self.generator(average_z)
-            output_path = os.path.join(projected_output_dir, 'avr-img-batch_{:05d}.png'.format(batch_id))
-            save_single_image(average_image, output_path)
+            padded_average_z = np.zeros(shape=(self.batch_size, self.z_dim), dtype=np.float32)
+            padded_average_z[0] = average_z
+            padded_average_z_tensor = tf.convert_to_tensor(padded_average_z)
+            average_image = self.generator(padded_average_z_tensor)
+            output_path = os.path.join(projected_img_output_dir, 'avr-img-batch_{:05d}.png'.format(batch_id))
+            save_image_batch(average_image, self.batch_size, output_path)
 
             
             

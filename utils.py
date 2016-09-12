@@ -37,12 +37,11 @@ def save_image_batch(batch, batch_size, image_path, num_cols=8):
                        image_path)
 
 def save_z_vector_batch(batch, batch_size, file_path):
-    num_rows = np.ceil(batch_size/num_cols)
     for i in xrange(batch_size):
         z = batch[i, :]
-        file_path = "{}-z_{:05d}.pkl".format(file_path, i)
-        with open(file_path, 'w') as output:
-            pickle.dump(z, file_path)
+        vector_file_path = "{}-z_{:05d}.pkl".format(file_path, i)
+        with open(vector_file_path, 'w') as output:
+            pickle.dump(z, output)
     
 def imread(path):
     return scipy.misc.imread(path, mode='RGB').astype(np.float)

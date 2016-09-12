@@ -210,15 +210,17 @@ class DCGAN(object):
     def find_optimal_z(self,
                        loss_function,
                        loss_gradient,
-                       batch_images,
-                       batch_mask=None,
+                       images,
+                       mask_for_all_images=None,
                        init_z_hats=None,
                        n_iterations=1000,
                        learning_rate=0.01,
                        momentum=0.9,
-                       output_every_nth_step=50):
+                       output_every_nth_step=50,
+                       projected_img_output_dir=None,
+                       z_vector_output_dir=None):
         # initialize (starting vectors and starting velocity)
-        batch_size = len(batch_images)
+        batch_size = len(images)
         if init_z_hats is None:
             init_z_hats = np.random.uniform(-1, 1, size=(batch_size,
                                                          self.z_dim))
@@ -230,10 +232,10 @@ class DCGAN(object):
 
             feed_dict = {
                 self.z: z_hats,
-                self.images: batch_images,
+                self.images: images,
             }
-            if batch_mask is not None:
-                feed_dict[self.mask] = batch_mask
+            if mask_for_all_images is not None:
+                feed_dict[self.mask] = mask_for_all_images
 
             run = [loss_function, loss_gradient, self.G]
             loss, gradient, generated_images = self.sess.run(run, feed_dict=feed_dict)
@@ -253,38 +255,46 @@ class DCGAN(object):
 
             # log the progress and save the intermediary z_hats and generated images
             # we get along the way during optimization
-            z_hats_history = []
-            generated_image_history = []
             if i % output_every_step == 0 or i == (n_iterations-1):
                 loss_value = np.mean(loss[0:batch_size])
                 msg = "Searching z, step {}. Loss = {}".format(i, loss_value)
                 print(msg)
-                z_hats_history.append(z_hats)
-                generated_image_history.append(generated_images)
 
+                if projected_img_output_dir:
+                    output_path = os.path.join(projected_img_output_dir, 'step_{:05d}.png'.format(step))
+                    save_image_batch(generated_images,
+                                     self.batch_size,
+                                     output_path)
+
+                if z_vectors_output_dir:
+                    output_path = os.path.join(z_vectors_output_dir, 'step_{:05d}'.format(step))
+                    save_z_vector_batch(z_hats,
+                                        self.batch_size,
+                                        output_path)
+                        
+                
         # at the end of these iterations, we're done, we have found
         # the z_hat vectors and the related generated images for this batch
-        return z_hats, generated_images, z_hats_history, generated_image_history
+        return z_hats, generated_images
             
 
-                    
     def project(self, config):
 
         # create the output directories
+        output_dir = config.outDir
+        projected_output_dir = os.path.join(output_dir, 'projected'))
+        z_vectors_output_dir = os.path.join(output_dir, 'z_vectors'))
+        for directory in (projected_output_dir, z_vectors_output_dir):
         try:
-            os.makedirs(os.path.join(config.outDir, 'hats_imgs'))
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
-        try:
-            os.makedirs(os.path.join(config.outDir, 'projected'))
+            os.makedirs(directory)
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
 
+        # initialize tensorflow variables
         tf.initialize_all_variables().run()
 
-        # Load a trained checkpoint model
+        # load a trained checkpoint model
         isLoaded = self.load(self.checkpoint_dir)
         assert(isLoaded)
         
@@ -304,27 +314,39 @@ class DCGAN(object):
             # if this is the final batch, pad the array with zeros to
             # make this final batch the same size as the others
             if current_batch_size < self.batch_size:
-                pad_size = ((0, int(self.batch_size-batchSz)), (0,0), (0,0), (0,0))
+                pad_size = ((0, int(self.batch_size-current_batch_size)), (0,0), (0,0), (0,0))
                 batch_images = np.pad(batch_images, pad_size, 'constant')
                 batch_images = batch_images.astype(np.float32)
 
-            # Initialize the z vectors we will find for each image
-            # (there are a self.batch_size number of z vectors we will find)
-            z_hats = np.random.uniform(-1, 1, size=(self.batch_size, self.z_dim))
-
             # save the original image in the output directory for convenience
             # make a matrix of images (8 columns)
-            num_rows = np.ceil(batch_size/8)
-            num_cols = 8
-            save_images(batch_images[:batch_size,:,:,:], [num_rows,num_cols],
-                        os.path.join(config.outDir, 'original.png'))
+            save_image_batch(batch_images,
+                             self.batch_size,
+                             os.path.join(config.outDir, 'originals.png'))
 
-            # MINIBATCH PROJECTED GRADIENT DESCENT WITH MOMENTUM TO FIND THE Z_HATS
-            # THAT MAXIMIZE THE PROJECTION LOSS (full contextual loss and perceptual loss)
-            pass
+            # projected gradient descent with momentum to find the z_hats
+            # that maximize the projection loss (full contextual loss and perceptual loss)
+            (z_hats,
+             generated_images) = self.find_optimal_z(loss_function = self.project_loss,
+                                                     loss_gradient = self.grad_project_loss,
+                                                     images = batch_images,
+                                                     n_iterations=50,
+                                                     output_every_nth_step=5,
+                                                     projected_img_output_dir = projected_output_dir,
+                                                     z_vector_output_dir = z_vector_output_dir)
+
+
+            # take the average of all returned z_hats and save the corresponding image
+            # it is the "average" of all images in this batch (but averaged in z-space,
+            # not pixel-space, of course)
+            nonzero_z_hats = z_hats[:current_batch_size, :]
+            average_z = nonzero_z_hats.mean(axis=0)
+            average_image = self.generator(average_z)
+            output_path = os.path.join(projected_output_dir, 'avr-img-batch_{:05d}.png'.format(batch_id))
+            save_single_image(average_image, output_path)
+
             
-
-        
+            
 
     def complete(self, config):
         try:

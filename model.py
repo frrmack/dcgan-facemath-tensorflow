@@ -209,12 +209,47 @@ class DCGAN(object):
 
         tf.initialize_all_variables().run()
 
+        # Load a trained checkpoint model
         isLoaded = self.load(self.checkpoint_dir)
         assert(isLoaded)
         
-        nImgs = len(config.imgs)
-        batch_idxs = int(np.ceil(nImgs/self.batch_size))
-                    
+        num_images = len(config.imgs)
+        num_batches = int(np.ceil(num_images/self.batch_size))
+
+        for batch_no in xrange(0, num_batches):
+            # read images of this batch into an array
+            batch_start_id = batch_no * self.batch_size
+            batch_end_id  = min((batch_no+1) * self.batch_size,num_images)
+            current_batch_size = batch_end_id - batch_start_id
+            batch_files = config.imgs[batch_start_id:batch_end_id]
+            batch_images = [get_image(batch_file, self.image_size, is_crop=self.is_crop)
+                     for batch_file in batch_files]
+            batch_images = np.array(batch_images).astype(np.float32)
+
+            # if this is the final batch, pad the array with zeros to
+            # make this final batch the same size as the others
+            if current_batch_size < self.batch_size:
+                pad_size = ((0, int(self.batch_size-batchSz)), (0,0), (0,0), (0,0))
+                batch_images = np.pad(batch_images, pad_size, 'constant')
+                batch_images = batch_images.astype(np.float32)
+
+            # Initialize the z vectors we will find for each image
+            # (there are a self.batch_size number of z vectors we will find)
+            z_hats = np.random.uniform(-1, 1, size=(self.batch_size, self.z_dim))
+
+            # save the original image in the output directory for convenience
+            # make a matrix of images (8 columns)
+            num_rows = np.ceil(batch_size/8)
+            num_cols = 8
+            save_images(batch_images[:batch_size,:,:,:], [num_rows,num_cols],
+                        os.path.join(config.outDir, 'original.png'))
+
+            # MINIBATCH PROJECTED GRADIENT DESCENT WITH MOMENTUM TO FIND THE Z_HATS
+            # THAT MAXIMIZE THE PROJECTION LOSS (full contextual loss and perceptual loss)
+            pass
+            
+
+        
 
     def complete(self, config):
         os.makedirs(os.path.join(config.outDir, 'hats_imgs'), exist_ok=True)

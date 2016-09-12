@@ -212,6 +212,8 @@ class DCGAN(object):
         isLoaded = self.load(self.checkpoint_dir)
         assert(isLoaded)
         
+        nImgs = len(config.imgs)
+        batch_idxs = int(np.ceil(nImgs/self.batch_size))
                     
 
     def complete(self, config):
@@ -228,7 +230,7 @@ class DCGAN(object):
 
         batch_idxs = int(np.ceil(nImgs/self.batch_size))
         if config.maskType == 'random':
-            assert(False)
+            raise NotImplementedError('random mask not yet implemented')
         elif config.maskType == 'center':
             scale = 0.25
             assert(scale <= 0.5)
@@ -238,7 +240,7 @@ class DCGAN(object):
             u = int(self.image_size*(1.0-scale))
             mask[l:u, l:u, :] = 0.0
         elif config.maskType == 'left':
-            assert(False)
+            raise NotImplementedError('left mask not yet implemented')
         elif config.maskType == 'full':
             mask = np.ones(self.image_shape)
         else:

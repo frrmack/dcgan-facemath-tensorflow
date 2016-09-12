@@ -204,8 +204,18 @@ class DCGAN(object):
                     self.save(config.checkpoint_dir, counter)
 
     def project(self, config):
-        os.makedirs(os.path.join(config.outDir, 'hats_imgs'), exist_ok=True)
-        os.makedirs(os.path.join(config.outDir, 'projected'), exist_ok=True)
+
+        # create the output directories
+        try:
+            os.makedirs(os.path.join(config.outDir, 'hats_imgs'))
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        try:
+            os.makedirs(os.path.join(config.outDir, 'projected'))
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
 
         tf.initialize_all_variables().run()
 
@@ -252,8 +262,16 @@ class DCGAN(object):
         
 
     def complete(self, config):
-        os.makedirs(os.path.join(config.outDir, 'hats_imgs'), exist_ok=True)
-        os.makedirs(os.path.join(config.outDir, 'completed'), exist_ok=True)
+        try:
+            os.makedirs(os.path.join(config.outDir, 'hats_imgs'))
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        try:
+            os.makedirs(os.path.join(config.outDir, 'completed'))
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
 
         tf.initialize_all_variables().run()
 

@@ -2,6 +2,9 @@
 #   + Source: https://github.com/carpedm20/DCGAN-tensorflow/blob/e30539fb5e20d5a0fed40935853da97e9e55eee8/model.py
 #   + License: MIT
 # [2016-08-05] Modifications for Completion: Brandon Amos (http://bamos.github.io)
+#   + Source: https://github.com/bamos/dcgan-completion.tensorflow/blob/master/model.py
+#   + License: MIT
+# [2016-09] Modifications for Projection and Face Math: Irmak Sirer (http://www.irmaksirer.com)
 #   + License: MIT
 
 from __future__ import division
@@ -203,6 +206,68 @@ class DCGAN(object):
                 if np.mod(counter, 500) == 2:
                     self.save(config.checkpoint_dir, counter)
 
+
+    def find_optimal_z(self,
+                       loss_function,
+                       loss_gradient,
+                       batch_images,
+                       batch_mask=None,
+                       init_z_hats=None,
+                       n_iterations=1000,
+                       learning_rate=0.01,
+                       momentum=0.9,
+                       output_every_nth_step=50):
+        # initialize (starting vectors and starting velocity)
+        batch_size = len(batch_images)
+        if init_z_hats is None:
+            init_z_hats = np.random.uniform(-1, 1, size=(batch_size,
+                                                         self.z_dim))
+        z_hats = init_z_hats
+        v = 0
+
+        # steps of gradient descent with momentum
+        for i in xrange(n_iterations):
+
+            feed_dict = {
+                self.z: z_hats,
+                self.images: batch_images,
+            }
+            if batch_mask is not None:
+                feed_dict[self.mask] = batch_mask
+
+            run = [loss_function, loss_gradient, self.G]
+            loss, gradient, generated_images = self.sess.run(run, feed_dict=feed_dict)
+
+            # update velocity
+            v_prev = np.copy(v)
+            v = momentum * v_prev - learning_rate * gradient[0]
+
+            # update our current best z_hat vectors
+            z_hats += -momentum * v_prev + (1 + momentum) * v
+
+            # if this update pushed us out of the (-1,1) domain of z,
+            # clip it to stay in. This makes it "projected" gradient descent
+            # check here for a concise explanation:
+            # http://math.stackexchange.com/questions/571068/what-is-the-difference-between-projected-gradient-descent-and-ordinary-gradient
+            np.clip(z_hats, -1, 1)
+
+            # log the progress and save the intermediary z_hats and generated images
+            # we get along the way during optimization
+            z_hats_history = []
+            generated_image_history = []
+            if i % output_every_step == 0 or i == (n_iterations-1):
+                loss_value = np.mean(loss[0:batch_size])
+                msg = "Searching z, step {}. Loss = {}".format(i, loss_value)
+                print(msg)
+                z_hats_history.append(z_hats)
+                generated_image_history.append(generated_images)
+
+        # at the end of these iterations, we're done, we have found
+        # the z_hat vectors and the related generated images for this batch
+        return z_hats, generated_images, z_hats_history, generated_image_history
+            
+
+                    
     def project(self, config):
 
         # create the output directories

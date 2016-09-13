@@ -280,7 +280,7 @@ class DCGAN(object):
         return z_hats, generated_images
 
 
-    def draw_from_z(self, z):
+    def z_to_image(self, z):
         # requires a model to be already initialized and ran
         num_z_vectors = z.shape[0]
         assert num_z_vectors <= self.batch_size, "Can't draw more images than batch size in one go"
@@ -310,7 +310,7 @@ class DCGAN(object):
         z = np.array([z1 + i*dz for i in xrange(num_frames)], dtype=np.float32)
         z = z.reshape(-1, self.z_dim)
         
-        transition_frames = self.draw_from_z(z)
+        transition_frames = self.z_to_image(z)
         
         ensure_directory(config.outDir)
         for frame_no in xrange(num_frames):
@@ -395,7 +395,7 @@ class DCGAN(object):
             # batch, the rest is zero padding)
             nonzero_z_hats = z_hats[:current_batch_size, :]
             average_z = nonzero_z_hats.mean(axis=0)
-            average_image = self.draw_from_z(average_z)
+            average_image = self.z_to_image(average_z)
             output_path = os.path.join(projected_img_output_dir, 'batch_{:03d}-average-z-img.png'.format(batch_no))
             save_image_batch(average_image, 1, output_path)
 

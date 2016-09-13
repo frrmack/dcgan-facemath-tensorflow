@@ -114,8 +114,12 @@ class DCGAN(object):
         self.saver = tf.train.Saver(max_to_keep=1)
 
         # Projection
+        # l1 norm
+        # self.full_contextual_loss = tf.reduce_sum(
+        #     tf.contrib.layers.flatten(tf.abs(self.G - self.images)), 1)
+        # l2 norm
         self.full_contextual_loss = tf.reduce_sum(
-            tf.contrib.layers.flatten(tf.abs(self.G - self.images)), 1)
+            tf.contrib.layers.flatten(tf.square(self.G - self.images)), 1)
         self.perceptual_loss = self.g_loss
         self.project_loss = self.full_contextual_loss + self.lam*self.perceptual_loss
         self.grad_project_loss = tf.gradients(self.project_loss, self.z)

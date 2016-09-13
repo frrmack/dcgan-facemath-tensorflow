@@ -290,7 +290,7 @@ class DCGAN(object):
         return image
         
 
-    def interpolate(self, z1=None, z2=None, num_frames=64):
+    def interpolate(self, config=None, z1=None, z2=None, num_frames=64):
         # initialize and load a trained checkpoint model
         tf.initialize_all_variables().run()
         isLoaded = self.load(self.checkpoint_dir)
@@ -304,8 +304,12 @@ class DCGAN(object):
         z = z.reshape(-1, self.z_dim)
         
         transition_frames = self.draw_from_z(z)
-        output_path = "interpolate_output.png"
-        save_image_batch(transition_frames, num_frames, output_path)
+        
+        ensure_directory(config.outDir)
+        for frame_no in xrange(num_frames):
+            output_path = os.path.join(config.outDir, "frame_{:02d}.png".format(frame_no))
+            frame = transition_frames[frame_no, :, :]
+            save_single_image(frame, output_path)
         
 
         

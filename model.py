@@ -280,8 +280,35 @@ class DCGAN(object):
         return z_hats, generated_images
 
 
+    def draw_from_z(self, z):
+        # requires a model to be already initialized and ran
+        num_z_vectors = z.shape[0]
+        assert num_z_vectors <= self.batch_size, "Can't draw more images than batch size in one go"
+        padded_z = np.zeros(shape=(self.batch_size, self.z_dim), dtype=np.float32)
+        padded_z[:num_z_vectors] = z
+        image = self.sess.run(self.sampler, feed_dict={self.z: padded_z})
+        return image
+        
 
+    def interpolate(self, z1=None, z2=None, num_frames=64):
+        # initialize and load a trained checkpoint model
+        tf.initialize_all_variables().run()
+        isLoaded = self.load(self.checkpoint_dir)
+        assert(isLoaded)
 
+        z1 = np.random.uniform(-1, 1, size=(1, self.z_dim))
+        z2 = np.random.uniform(-1, 1, size=(1, self.z_dim))
+
+        dz = (z2 - z1) / float(num_frames)
+        z = np.array([z1 + i*dz for i in xrange(num_frames)], dtype=np.float32)
+        z = z.reshape(-1, self.z_dim)
+        
+        transition_frames = self.draw_from_z(z)
+        output_path = "interpolate_output.png"
+        save_image_batch(transition_frames, num_frames, output_path)
+        
+
+        
     def project(self, config):
 
         # create the output directories
@@ -357,9 +384,7 @@ class DCGAN(object):
             # batch, the rest is zero padding)
             nonzero_z_hats = z_hats[:current_batch_size, :]
             average_z = nonzero_z_hats.mean(axis=0)
-            padded_average_z = np.ones(shape=(self.batch_size, self.z_dim), dtype=np.float32)
-            padded_average_z[0] = average_z
-            average_image = self.sess.run(self.sampler, feed_dict={self.z: padded_average_z})
+            average_image = self.draw_from_z(average_z)
             output_path = os.path.join(projected_img_output_dir, 'batch_{:03d}-average-z-img.png'.format(batch_no))
             save_image_batch(average_image, 1, output_path)
 

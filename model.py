@@ -324,7 +324,7 @@ class DCGAN(object):
             # make a matrix of images (8 columns)
             save_image_batch(batch_images,
                              current_batch_size,
-                             os.path.join(config.outDir, 'originals.png'))
+                             os.path.join(config.outDir, 'batch_{:03d}-0riginals.png'.format(batch_no)))
 
             # projected gradient descent with momentum to find the z_hats
             # that maximize the projection loss (full contextual loss and perceptual loss)
@@ -343,7 +343,6 @@ class DCGAN(object):
                                 current_batch_size,
                                 output_path)
 
-
             # take the average of all returned z_hats and save the corresponding image
             # it is the "average" of all images in this batch (but averaged in z-space,
             # not pixel-space, of course)
@@ -354,7 +353,7 @@ class DCGAN(object):
             padded_average_z = np.ones(shape=(self.batch_size, self.z_dim), dtype=np.float32)
             padded_average_z[0] = average_z
             average_image = self.sess.run(self.sampler, feed_dict={self.z: padded_average_z})
-            output_path = os.path.join(batch_img_dir, 'average-z-img.png'.format(batch_no))
+            output_path = os.path.join(projected_img_output_dir, 'batch_{:03d}-average-z-img.png'.format(batch_no))
             save_image_batch(average_image, 1, output_path)
 
             

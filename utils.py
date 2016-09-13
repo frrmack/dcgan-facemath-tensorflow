@@ -38,7 +38,7 @@ def save_images(images, size, image_path):
     return imsave(inverse_transform(images), size, image_path)
 
 def save_single_image(image, image_path):
-    return save_images([image], (1,1), image_path)
+    return save_images(np.array([image]), (1,1), image_path)
 
 def save_image_batch(batch, batch_size, image_path, num_cols=8):
     num_cols = min(batch_size, num_cols)

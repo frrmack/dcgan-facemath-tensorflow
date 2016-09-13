@@ -264,13 +264,13 @@ class DCGAN(object):
                 print(msg)
 
                 if projected_img_output_dir:
-                    output_path = os.path.join(projected_img_output_dir, 'step_{:05d}.png'.format(step))
+                    output_path = os.path.join(projected_img_output_dir, 'step_{:04d}.png'.format(step))
                     save_image_batch(generated_images,
                                      current_batch_size,
                                      output_path)
 
                 if z_vectors_output_dir:
-                    output_path = os.path.join(z_vectors_output_dir, 'step_{:05d}'.format(step))
+                    output_path = os.path.join(z_vectors_output_dir, 'step_{:04d}'.format(step))
                     save_z_vector_batch(z_hats,
                                         self.batch_size,
                                         output_path)
@@ -287,12 +287,8 @@ class DCGAN(object):
         projected_img_output_dir = os.path.join(output_dir, 'projected')
         z_vectors_output_dir = os.path.join(output_dir, 'z_vectors')
         for directory in (projected_img_output_dir, z_vectors_output_dir):
-            try:
-                os.makedirs(directory)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
-
+            ensure_directory(directory)
+            
         # initialize tensorflow variables
         tf.initialize_all_variables().run()
 
@@ -303,7 +299,11 @@ class DCGAN(object):
         num_images = len(config.imgs)
         num_batches = int(np.ceil(num_images/self.batch_size))
 
-        for batch_no in xrange(0, num_batches):
+        for batch_no in xrange(0, num_batches): 
+            # create subdirectory for output (projected images for this batch)
+            batch_img_dir = os.path.join(projected_img_output_dir, 'batch_{:03d}'.format(batch_no))
+            ensure_directory(batch_img_dir)
+
             # read images of this batch into an array
             batch_start_id = batch_no * self.batch_size
             batch_end_id  = min((batch_no+1) * self.batch_size,num_images)
@@ -335,8 +335,13 @@ class DCGAN(object):
                                                      current_batch_size = current_batch_size,
                                                      n_iterations=4,
                                                      output_every_nth_step=5,
-                                                     projected_img_output_dir = projected_img_output_dir,
-                                                     z_vectors_output_dir = z_vectors_output_dir)
+                                                     projected_img_output_dir = batch_img_dir)
+
+            # save the final z vectors for all images in the batch
+            output_path = os.path.join(z_vectors_output_dir, 'batch_{:03d}'.format(batch_no))
+            save_z_vector_batch(z_hats,
+                                current_batch_size,
+                                output_path)
 
 
             # take the average of all returned z_hats and save the corresponding image
@@ -349,7 +354,7 @@ class DCGAN(object):
             padded_average_z = np.ones(shape=(self.batch_size, self.z_dim), dtype=np.float32)
             padded_average_z[0] = average_z
             average_image = self.sess.run(self.sampler, feed_dict={self.z: padded_average_z})
-            output_path = os.path.join(projected_img_output_dir, 'avr-img-batch_{:05d}.png'.format(batch_no))
+            output_path = os.path.join(batch_img_dir, 'average-z-img.png'.format(batch_no))
             save_image_batch(average_image, 1, output_path)
 
             

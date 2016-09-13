@@ -10,6 +10,7 @@ Some codes from https://github.com/Newmu/dcgan_code
 from __future__ import division
 import math
 import json
+import os
 import random
 import pprint
 import pickle
@@ -20,6 +21,14 @@ from time import gmtime, strftime
 pp = pprint.PrettyPrinter()
 
 get_stddev = lambda x, k_h, k_w: 1/math.sqrt(k_w*k_h*x.get_shape()[-1])
+
+def ensure_directory(directory):
+    try:
+        os.makedirs(directory)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+    
 
 def get_image(image_path, image_size, is_crop=True):
     return transform(imread(image_path), image_size, is_crop)

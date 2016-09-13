@@ -201,7 +201,7 @@ class DCGAN(object):
                         feed_dict={self.z: sample_z, self.images: sample_images}
                     )
                     save_images(samples, [8, 8],
-                                './samples/train_{:02d}_{:04d}.png'.format(epoch, idx))
+                                './samples/train_{:02d}_{:05d}.png'.format(epoch, idx))
                     print("[Sample] d_loss: %.8f, g_loss: %.8f" % (d_loss, g_loss))
 
                 if np.mod(counter, 500) == 2:
@@ -264,13 +264,13 @@ class DCGAN(object):
                 print(msg)
 
                 if projected_img_output_dir:
-                    output_path = os.path.join(projected_img_output_dir, 'step_{:04d}.png'.format(step))
+                    output_path = os.path.join(projected_img_output_dir, 'step_{:05d}.png'.format(step))
                     save_image_batch(generated_images,
                                      current_batch_size,
                                      output_path)
 
                 if z_vectors_output_dir:
-                    output_path = os.path.join(z_vectors_output_dir, 'step_{:04d}'.format(step))
+                    output_path = os.path.join(z_vectors_output_dir, 'step_{:05d}'.format(step))
                     save_z_vector_batch(z_hats,
                                         self.batch_size,
                                         output_path)
@@ -278,7 +278,9 @@ class DCGAN(object):
         # at the end of these iterations, we're done, we have found
         # the z_hat vectors and the related generated images for this batch
         return z_hats, generated_images
-            
+
+
+
 
     def project(self, config):
 
@@ -302,7 +304,9 @@ class DCGAN(object):
         for batch_no in xrange(0, num_batches): 
             # create subdirectory for output (projected images for this batch)
             batch_img_dir = os.path.join(projected_img_output_dir, 'batch_{:03d}'.format(batch_no))
+            batch_vectors_dir = os.path.join(z_vectors_output_dir, 'batch_{:03d}'.format(batch_no))
             ensure_directory(batch_img_dir)
+            ensure_directory(batch_vectors_dir)
 
             # read images of this batch into an array
             batch_start_id = batch_no * self.batch_size
@@ -333,9 +337,12 @@ class DCGAN(object):
                                                      loss_gradient = self.grad_project_loss,
                                                      images = batch_images,
                                                      current_batch_size = current_batch_size,
-                                                     n_iterations=1000,
+                                                     n_iterations=2000,
+                                                     learning_rate = 5e-5,
+                                                     momentum = 0.5,
                                                      output_every_nth_step=25,
-                                                     projected_img_output_dir = batch_img_dir)
+                                                     projected_img_output_dir = batch_img_dir,
+                                                     z_vectors_output_dir = batch_vectors_dir)
 
             # save the final z vectors for all images in the batch
             output_path = os.path.join(z_vectors_output_dir, 'batch_{:03d}'.format(batch_no))
@@ -440,7 +447,7 @@ class DCGAN(object):
                 if i % 50 == 0:
                     print(i, np.mean(loss[0:batchSz]))
                     imgName = os.path.join(config.outDir,
-                                           'hats_imgs/{:04d}.png'.format(i))
+                                           'hats_imgs/{:05d}.png'.format(i))
                     nRows = np.ceil(batchSz/8)
                     nCols = 8
                     save_images(G_imgs[:batchSz,:,:,:], [nRows,nCols], imgName)
@@ -448,7 +455,7 @@ class DCGAN(object):
                     inv_masked_hat_images = np.multiply(G_imgs, 1.0-batch_mask)
                     completeed = masked_images + inv_masked_hat_images
                     imgName = os.path.join(config.outDir,
-                                           'completed/{:04d}.png'.format(i))
+                                           'completed/{:05d}.png'.format(i))
                     save_images(completeed[:batchSz,:,:,:], [nRows,nCols], imgName)
 
     def discriminator(self, image, reuse=False):

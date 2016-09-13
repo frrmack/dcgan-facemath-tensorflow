@@ -30,7 +30,6 @@ def ensure_directory(directory):
         if e.errno != errno.EEXIST:
             raise
     
-
 def get_image(image_path, image_size, is_crop=True):
     return transform(imread(image_path), image_size, is_crop)
 

@@ -270,7 +270,7 @@ class DCGAN(object):
                                      output_path)
 
                 if z_vectors_output_dir:
-                    output_path = os.path.join(z_vectors_output_dir, 'step_{:05d}'.format(step))
+                    output_path = os.path.join(z_vectors_output_dir, 'last-z')
                     save_z_vector_batch(z_hats,
                                         self.batch_size,
                                         output_path)
@@ -290,14 +290,17 @@ class DCGAN(object):
         return image
         
 
-    def interpolate(self, config=None, z1=None, z2=None, num_frames=64):
+    def interpolate(self, config=None, num_frames=64):
         # initialize and load a trained checkpoint model
         tf.initialize_all_variables().run()
         isLoaded = self.load(self.checkpoint_dir)
         assert(isLoaded)
 
-        z1 = np.random.uniform(-1, 1, size=(1, self.z_dim))
-        z2 = np.random.uniform(-1, 1, size=(1, self.z_dim))
+        config.vector1
+        
+            z1 = np.random.uniform(-1, 1, size=(1, self.z_dim))
+
+            z2 = np.random.uniform(-1, 1, size=(1, self.z_dim))
 
         dz = (z2 - z1) / float(num_frames)
         z = np.array([z1 + i*dz for i in xrange(num_frames)], dtype=np.float32)
@@ -368,9 +371,9 @@ class DCGAN(object):
                                                      loss_gradient = self.grad_project_loss,
                                                      images = batch_images,
                                                      current_batch_size = current_batch_size,
-                                                     n_iterations=2000,
-                                                     learning_rate = 5e-5,
-                                                     momentum = 0.5,
+                                                     n_iterations= config.nIter,
+                                                     learning_rate = config.lr,
+                                                     momentum = config.momentum,
                                                      output_every_nth_step=25,
                                                      projected_img_output_dir = batch_img_dir,
                                                      z_vectors_output_dir = batch_vectors_dir)

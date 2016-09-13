@@ -12,6 +12,7 @@ import math
 import json
 import os
 import random
+import errno
 import pprint
 import pickle
 import scipy.misc

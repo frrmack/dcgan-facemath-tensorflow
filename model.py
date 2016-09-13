@@ -333,8 +333,8 @@ class DCGAN(object):
                                                      loss_gradient = self.grad_project_loss,
                                                      images = batch_images,
                                                      current_batch_size = current_batch_size,
-                                                     n_iterations=4,
-                                                     output_every_nth_step=5,
+                                                     n_iterations=1000,
+                                                     output_every_nth_step=25,
                                                      projected_img_output_dir = batch_img_dir)
 
             # save the final z vectors for all images in the batch

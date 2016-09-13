@@ -331,7 +331,7 @@ class DCGAN(object):
              generated_images) = self.find_optimal_z(loss_function = self.project_loss,
                                                      loss_gradient = self.grad_project_loss,
                                                      images = batch_images,
-                                                     n_iterations=10,
+                                                     n_iterations=4,
                                                      output_every_nth_step=5,
                                                      projected_img_output_dir = projected_img_output_dir,
                                                      z_vectors_output_dir = z_vectors_output_dir)
@@ -344,11 +344,10 @@ class DCGAN(object):
             # batch, the rest is zero padding)
             nonzero_z_hats = z_hats[:current_batch_size, :]
             average_z = nonzero_z_hats.mean(axis=0)
-            padded_average_z = np.zeros(shape=(self.batch_size, self.z_dim), dtype=np.float32)
+            padded_average_z = np.ones(shape=(self.batch_size, self.z_dim), dtype=np.float32)
             padded_average_z[0] = average_z
-            padded_average_z_tensor = tf.convert_to_tensor(padded_average_z)
-            average_image = self.generator(padded_average_z_tensor)
-            output_path = os.path.join(projected_img_output_dir, 'avr-img-batch_{:05d}.png'.format(batch_id))
+            average_image = self.sess.run(self.sampler, feed_dict={self.z: padded_average_z})
+            output_path = os.path.join(projected_img_output_dir, 'avr-img-batch_{:05d}.png'.format(batch_no))
             save_image_batch(average_image, self.batch_size, output_path)
 
             

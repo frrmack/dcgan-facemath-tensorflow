@@ -53,7 +53,11 @@ def save_z_vector_batch(batch, batch_size, file_path):
         vector_file_path = "{}-z_{:05d}.pkl".format(file_path, i)
         with open(vector_file_path, 'w') as output:
             pickle.dump(z, output)
-    
+    all_vectors_file_path = "{}-all_z.pkl".format(file_path)
+    with open(all_vectors_file_path, 'w') as output:
+        pickle.dump(batch[:batch_size, :], output)
+
+            
 def imread(path):
     return scipy.misc.imread(path, mode='RGB').astype(np.float)
 

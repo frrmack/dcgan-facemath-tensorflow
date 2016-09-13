@@ -296,10 +296,14 @@ class DCGAN(object):
         isLoaded = self.load(self.checkpoint_dir)
         assert(isLoaded)
 
-        config.vector1
-        
+        # load vectors if given (use random vectors if not)
+        if config.vector1:
+            z1 = load_z_vector(config.vector1)
+        else:
             z1 = np.random.uniform(-1, 1, size=(1, self.z_dim))
-
+        if config.vector2:
+            z2 = load_z_vector(config.vector2)
+        else:
             z2 = np.random.uniform(-1, 1, size=(1, self.z_dim))
 
         dz = (z2 - z1) / float(num_frames)

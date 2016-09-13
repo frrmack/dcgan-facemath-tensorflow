@@ -56,6 +56,9 @@ def save_z_vector_batch(batch, batch_size, file_path):
     with open(all_vectors_file_path, 'w') as output:
         pickle.dump(batch[:batch_size, :], output)
 
+def load_z_vector(pickle_file_path):
+    with open(pickle_file_path, 'r') as inputfile:
+        return pickle.load(inputfile)
             
 def imread(path):
     return scipy.misc.imread(path, mode='RGB').astype(np.float)

@@ -213,6 +213,7 @@ class DCGAN(object):
                        loss_gradient,
                        images,
                        mask_for_all_images=None,
+                       current_batch_size = None,
                        init_z_hats=None,
                        n_iterations=1000,
                        learning_rate=0.01,
@@ -220,10 +221,11 @@ class DCGAN(object):
                        output_every_nth_step=50,
                        projected_img_output_dir=None,
                        z_vectors_output_dir=None):
-        # initialize (starting vectors and starting velocity)
-        batch_size = len(images)
+        # initialize (sizes, starting vectors and starting velocity)
+        if current_batch_size is None:
+            current_batch_size = self.batch_size
         if init_z_hats is None:
-            init_z_hats = np.random.uniform(-1, 1, size=(batch_size,
+            init_z_hats = np.random.uniform(-1, 1, size=(self.batch_size,
                                                          self.z_dim))
         z_hats = init_z_hats
         v = 0
@@ -257,14 +259,14 @@ class DCGAN(object):
             # log the progress and save the intermediary z_hats and generated images
             # we get along the way during optimization
             if step % output_every_nth_step == 0 or step == (n_iterations-1):
-                loss_value = np.mean(loss[0:batch_size])
+                loss_value = np.mean(loss[0:self.batch_size])
                 msg = "Searching z, step {}. Loss = {}".format(step, loss_value)
                 print(msg)
 
                 if projected_img_output_dir:
                     output_path = os.path.join(projected_img_output_dir, 'step_{:05d}.png'.format(step))
                     save_image_batch(generated_images,
-                                     self.batch_size,
+                                     current_batch_size,
                                      output_path)
 
                 if z_vectors_output_dir:
@@ -273,7 +275,6 @@ class DCGAN(object):
                                         self.batch_size,
                                         output_path)
                         
-                
         # at the end of these iterations, we're done, we have found
         # the z_hat vectors and the related generated images for this batch
         return z_hats, generated_images
@@ -322,7 +323,7 @@ class DCGAN(object):
             # save the original image in the output directory for convenience
             # make a matrix of images (8 columns)
             save_image_batch(batch_images,
-                             self.batch_size,
+                             current_batch_size,
                              os.path.join(config.outDir, 'originals.png'))
 
             # projected gradient descent with momentum to find the z_hats
@@ -331,6 +332,7 @@ class DCGAN(object):
              generated_images) = self.find_optimal_z(loss_function = self.project_loss,
                                                      loss_gradient = self.grad_project_loss,
                                                      images = batch_images,
+                                                     current_batch_size = current_batch_size,
                                                      n_iterations=4,
                                                      output_every_nth_step=5,
                                                      projected_img_output_dir = projected_img_output_dir,
@@ -348,7 +350,7 @@ class DCGAN(object):
             padded_average_z[0] = average_z
             average_image = self.sess.run(self.sampler, feed_dict={self.z: padded_average_z})
             output_path = os.path.join(projected_img_output_dir, 'avr-img-batch_{:05d}.png'.format(batch_no))
-            save_image_batch(average_image, self.batch_size, output_path)
+            save_image_batch(average_image, 1, output_path)
 
             
             

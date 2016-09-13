@@ -31,6 +31,7 @@ def save_single_image(image, image_path):
     return save_images([image], (1,1), image_path)
 
 def save_image_batch(batch, batch_size, image_path, num_cols=8):
+    num_cols = min(batch_size, num_cols)
     num_rows = np.ceil(batch_size/num_cols)
     return save_images(batch[:batch_size,:,:,:],
                        [num_rows,num_cols],

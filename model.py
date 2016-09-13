@@ -254,7 +254,7 @@ class DCGAN(object):
             # clip it to stay in. This makes it "projected" gradient descent
             # check here for a concise explanation:
             # http://math.stackexchange.com/questions/571068/what-is-the-difference-between-projected-gradient-descent-and-ordinary-gradient
-            np.clip(z_hats, -1, 1)
+            z_hats = np.clip(z_hats, -1, 1)
 
             # log the progress and save the intermediary z_hats and generated images
             # we get along the way during optimization

@@ -219,6 +219,7 @@ class DCGAN(object):
                        mask_for_all_images=None,
                        current_batch_size = None,
                        init_z_hats=None,
+                       optim_method="adam",
                        n_iterations=1000,
                        learning_rate=0.01,
                        momentum=0.9,
@@ -238,7 +239,9 @@ class DCGAN(object):
         m = 0
         v = 0
 
-        # steps of Adam optimization
+        optim_method = "adam"
+        
+        # steps of optimization (gradient descent: either momentum or Adam)
         for step in xrange(n_iterations):
 
             feed_dict = {
@@ -256,18 +259,27 @@ class DCGAN(object):
             # so there is only one element in that list (note that since z itself has 100
             # dimensions, and we have 64 images, this element will be an array of shape (64,100))
             gradient = gradients[0]
-            
-            # update biased first and second moment estimates
-            m = beta_1 * m + (1 - beta_1) * gradient
-            v = beta_2 * v + (1 - beta_2) * np.square(gradient)
 
-            # cumpute bias-corrected first and second moment estimates
-            m_hat = m / (1 - np.power(beta_1, step+1))
-            v_hat = v / (1 - np.power(beta_2, step+1))
-                         
-            # update parameters (our current best z_hat vectors)
-            z_hats -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
+            if optim_method == "adam":
+                # update biased first and second moment estimates
+                m = beta_1 * m + (1 - beta_1) * gradient
+                v = beta_2 * v + (1 - beta_2) * np.square(gradient)
+                # cumpute bias-corrected first and second moment estimates
+                m_hat = m / (1 - np.power(beta_1, step+1))
+                v_hat = v / (1 - np.power(beta_2, step+1))
+                # update parameters (our current best z_hat vectors)
+                z_hats -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
 
+            elif optim_method == "momentum":
+                # update velocity
+                v_prev = np.copy(v)
+                v = momentum * v_prev - learning_rate * gradient[0]
+                # update our current best z_hat vectors
+                z_hats += -momentum * v_prev + (1 + momentum) * v
+
+            else:
+                raise NotImplementedError
+                
             # if this update pushed us out of the (-1,1) domain of z,
             # clip it to stay in. This makes it "projected" gradient descent
             # check here for a concise explanation:

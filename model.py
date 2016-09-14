@@ -272,13 +272,13 @@ class DCGAN(object):
             # clip it to stay in. This makes it "projected" gradient descent
             # check here for a concise explanation:
             # http://math.stackexchange.com/questions/571068/what-is-the-difference-between-projected-gradient-descent-and-ordinary-gradient
-            # z_hats = np.clip(z_hats, -1, 1)
+            z_hats = np.clip(z_hats, -1, 1)
 
             # log the progress and save the intermediary z_hats and generated images
             # we get along the way during optimization
             if step % output_every_nth_step == 0 or step == (n_iterations-1):
                 loss_value = np.mean(loss[0:self.batch_size])
-                msg = "Searching z, step {}. Loss = {}".format(step, loss_value)
+                msg = "Searching z, step {}. Loss = {}  z_hat_example = {}".format(step, loss_value, z_hats[0, :5])
                 print(msg)
 
                 if projected_img_output_dir:
@@ -286,13 +286,21 @@ class DCGAN(object):
                     save_image_batch(generated_images,
                                      current_batch_size,
                                      output_path)
+                    # also save an average image
+                    nonzero_z_hats = z_hats[:current_batch_size, :]
+                    average_z = nonzero_z_hats.mean(axis=0).reshape(1,-1)
+                    average_image = self.z_to_image(average_z)
+                    output_path = os.path.join(projected_img_output_dir, '..', 'step_{:05d}-average-img.png'.format(step))
+                    save_image_batch(average_image, 1, output_path)
 
                 if z_vectors_output_dir:
-                    output_path = os.path.join(z_vectors_output_dir, 'last-z')
+                    output_path = os.path.join(z_vectors_output_dir, 'final')
                     save_z_vector_batch(z_hats,
                                         self.batch_size,
                                         output_path)
-                        
+
+
+                    
         # at the end of these iterations, we're done, we have found
         # the z_hat vectors and the related generated images for this batch
         return z_hats, generated_images
@@ -412,7 +420,7 @@ class DCGAN(object):
             # (since we are working with batches, this will be a single image in a whole
             # batch, the rest is zero padding)
             nonzero_z_hats = z_hats[:current_batch_size, :]
-            average_z = nonzero_z_hats.mean(axis=0)
+            average_z = nonzero_z_hats.mean(axis=0).reshape(-1,1)
             average_image = self.z_to_image(average_z)
             output_path = os.path.join(projected_img_output_dir, 'batch_{:03d}-average-z-img.png'.format(batch_no))
             save_image_batch(average_image, 1, output_path)

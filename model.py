@@ -225,16 +225,20 @@ class DCGAN(object):
                        output_every_nth_step=50,
                        projected_img_output_dir=None,
                        z_vectors_output_dir=None):
-        # initialize (sizes, starting vectors and starting velocity)
+        # initialize 
         if current_batch_size is None:
             current_batch_size = self.batch_size
         if init_z_hats is None:
             init_z_hats = np.random.uniform(-1, 1, size=(self.batch_size,
                                                          self.z_dim))
+        beta_1 = momentum
+        beta_2 = 0.999
+        epsilon = 1e-8
         z_hats = init_z_hats
+        m = 0
         v = 0
 
-        # steps of gradient descent with momentum
+        # steps of Adam optimization
         for step in xrange(n_iterations):
 
             feed_dict = {
@@ -245,20 +249,30 @@ class DCGAN(object):
                 feed_dict[self.mask] = mask_for_all_images
 
             run = [loss_function, loss_gradient, self.G]
-            loss, gradient, generated_images = self.sess.run(run, feed_dict=feed_dict)
+            loss, gradients, generated_images = self.sess.run(run, feed_dict=feed_dict)
 
-            # update velocity
-            v_prev = np.copy(v)
-            v = momentum * v_prev - learning_rate * gradient[0]
+            # tf.gradients will return a list, one for each variable w.r.t. which we
+            # take the partial derivatives. we are only taking derivatives w.r.t. z,
+            # so there is only one element in that list (note that since z itself has 100
+            # dimensions, and we have 64 images, this element will be an array of shape (64,100))
+            gradient = gradients[0]
+            
+            # update biased first and second moment estimates
+            m = beta_1 * m + (1 - beta_1) * gradient
+            v = beta_2 * v + (1 - beta_2) * np.square(gradient)
 
-            # update our current best z_hat vectors
-            z_hats += -momentum * v_prev + (1 + momentum) * v
+            # cumpute bias-corrected first and second moment estimates
+            m_hat = m / (1 - np.power(beta_1, step+1))
+            v_hat = v / (1 - np.power(beta_2, step+1))
+                         
+            # update parameters (our current best z_hat vectors)
+            z_hats -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
 
             # if this update pushed us out of the (-1,1) domain of z,
             # clip it to stay in. This makes it "projected" gradient descent
             # check here for a concise explanation:
             # http://math.stackexchange.com/questions/571068/what-is-the-difference-between-projected-gradient-descent-and-ordinary-gradient
-            z_hats = np.clip(z_hats, -1, 1)
+            # z_hats = np.clip(z_hats, -1, 1)
 
             # log the progress and save the intermediary z_hats and generated images
             # we get along the way during optimization

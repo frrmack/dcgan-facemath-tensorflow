@@ -278,7 +278,8 @@ class DCGAN(object):
                 z_hats += -momentum * v_prev + (1 + momentum) * v
 
             else:
-                raise NotImplementedError
+                raise NotImplementedError("optimization methods available for searching "
+                                          "z-space are 'adam' and 'momentum' only")
                 
             # if this update pushed us out of the (-1,1) domain of z,
             # clip it to stay in. This makes it "projected" gradient descent

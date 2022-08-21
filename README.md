@@ -2,9 +2,10 @@
 
 ## The Talk
 
+An adventure in searching for the platonic ideals of Matt Damon, George Clooney, and most important of them all, Irmak Sirer. 
+
 Watch the talk on youtube
 [![Watch the talk on youtube](https://i.imgur.com/CZukkvx.png)](https://www.youtube.com/watch?v=AlF4Ke3XuhA&t=371s)
-
 
 Slides on slideshare (earlier, shorter version)
 [![Slides](https://i.imgur.com/307DZxy.png)](https://www.slideshare.net/frrmack/deep-learning-reveals-the-essence-of-matt-damon)

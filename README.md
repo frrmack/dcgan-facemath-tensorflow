@@ -1,5 +1,18 @@
 # Face Math with Deep Learning in TensorFlow
 
+## The Talk
+
+Watch the talk on youtube
+[![Watch the talk on youtube](https://i.imgur.com/CZukkvx.png)](https://www.youtube.com/watch?v=AlF4Ke3XuhA&t=371s)
+
+
+Slides on slideshare (earlier, shorter version)
+[![Slides](https://i.imgur.com/307DZxy.png)](https://www.slideshare.net/frrmack/deep-learning-reveals-the-essence-of-matt-damon)
+([Video of this earlier, shorter talk with these exact slides](https://www.youtube.com/watch?v=BzRgipHRzOE))
+
+
+## Contents
+
 + This repository extends upon
   [Taehoon Kim's](http://carpedm20.github.io/) MIT licensed
   [DCGAN-tensorflow](https://github.com/carpedm20/DCGAN-tensorflow)
